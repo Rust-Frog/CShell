@@ -19,6 +19,7 @@ JsonObject {
             "to": "YT Music"
         }
     ]
+    property bool showLyrics: true
     property SunsetService sunsetService: SunsetService {}
 
     component SunsetService: JsonObject {
