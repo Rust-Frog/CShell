@@ -79,7 +79,8 @@ public:
         NoFilter,
         Images,
         Files,
-        Dirs
+        Dirs,
+        Media  // Images + Videos (for wallpaper picker)
     };
     Q_ENUM(Filter)
 

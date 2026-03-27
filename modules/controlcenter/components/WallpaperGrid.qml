@@ -2,6 +2,8 @@ pragma ComponentBehavior: Bound
 
 import ".."
 import QtQuick
+import Quickshell
+import Quickshell.Io
 import Caelestia.Models
 import qs.components
 import qs.components.controls
@@ -18,10 +20,26 @@ GridView {
     readonly property int minCellWidth: 200 + Appearance.spacing.normal
     readonly property int columnsCount: Math.max(1, Math.floor(width / minCellWidth))
 
+    // Video file extensions
+    readonly property var videoExtensions: [".mp4", ".mkv", ".webm", ".avi", ".mov", ".m4v", ".flv"]
+
+    function isVideo(path: string): bool {
+        const lower = path.toLowerCase();
+        return videoExtensions.some(ext => lower.endsWith(ext));
+    }
+
     cellWidth: width / columnsCount
     cellHeight: 140 + Appearance.spacing.normal
 
     model: Wallpapers.list
+
+    Component.onCompleted: {
+        console.log("[WallpaperGrid] Model loaded, count:", Wallpapers.list.length);
+        for (let i = 0; i < Math.min(Wallpapers.list.length, 10); i++) {
+            const item = Wallpapers.list[i];
+            console.log("[WallpaperGrid] Item", i, "- name:", item.name, "path:", item.path);
+        }
+    }
 
     clip: true
 
@@ -30,14 +48,63 @@ GridView {
     }
 
     delegate: Item {
+        id: delegateItem
+
         required property var modelData
         required property int index
         readonly property bool isCurrent: modelData && modelData.path === Wallpapers.actualCurrent
         readonly property real itemMargin: Appearance.spacing.normal / 2
         readonly property real itemRadius: Appearance.rounding.normal
+        readonly property bool isVideoFile: root.isVideo(modelData.path)
 
         width: root.cellWidth
         height: root.cellHeight
+
+        Component.onCompleted: {
+            console.log("[Delegate] Created index:", index, "name:", modelData.name, "path:", modelData.path, "isVideo:", isVideoFile);
+        }
+
+        // Generate video thumbnail on demand - use Timer to delay start
+        Timer {
+            id: thumbTimer
+            interval: 100
+            repeat: false
+            onTriggered: {
+                if (delegateItem.isVideoFile) {
+                    console.log("[Delegate] Triggering thumbnail for:", modelData.name);
+                    delegateItem.shouldGenerateThumb = true;
+                }
+            }
+        }
+
+        Process {
+            id: thumbnailProc
+
+            command: ["caelestia", "wallpaper", "-T", delegateItem.modelData.path]
+            running: delegateItem.shouldGenerateThumb && delegateItem.isVideoFile
+            
+            onRunningChanged: {
+                console.log("[Process] running changed to:", running, "for:", delegateItem.modelData.name);
+            }
+
+            stdout: StdioCollector {
+                onStreamFinished: {
+                    console.log("[Process] stdout finished, output:", text.trim());
+                    delegateItem.thumbnailPath = text.trim();
+                }
+            }
+
+            onError: {
+                console.log("[Process] ERROR:", message);
+            }
+        }
+
+        property string thumbnailPath: ""
+        property bool shouldGenerateThumb: false
+
+        Component.onCompleted: {
+            thumbTimer.running = true;
+        }
 
         StateLayer {
             function onClicked(): void {
@@ -66,19 +133,24 @@ GridView {
             layer.enabled: true
             layer.smooth: true
 
-            CachingImage {
+            // For images: use regular Image with debug
+            Image {
                 id: cachingImage
 
-                path: modelData.path
+                source: delegateItem.isVideoFile ? "" : "file://" + modelData.path
                 anchors.fill: parent
                 fillMode: Image.PreserveAspectCrop
                 cache: true
-                visible: opacity > 0
+                visible: !delegateItem.isVideoFile
                 antialiasing: true
                 smooth: true
                 sourceSize: Qt.size(width, height)
 
-                opacity: status === Image.Ready ? 1 : 0
+                onStatusChanged: {
+                    console.log("[Image] name:", modelData.name, "status:", status, "errorString:", errorString);
+                }
+
+                opacity: status === Image.Ready ? 1 : 0.3
 
                 Behavior on opacity {
                     NumberAnimation {
@@ -88,12 +160,40 @@ GridView {
                 }
             }
 
-            // Fallback if CachingImage fails to load
+            // For videos: use thumbnail from CLI
+            Image {
+                id: videoThumbnail
+
+                anchors.fill: parent
+                source: delegateItem.isVideoFile && delegateItem.thumbnailPath ? "file://" + delegateItem.thumbnailPath : ""
+                asynchronous: true
+                fillMode: Image.PreserveAspectCrop
+                cache: true
+                visible: delegateItem.isVideoFile
+                antialiasing: true
+                smooth: true
+                sourceSize: Qt.size(width, height)
+
+                onStatusChanged: {
+                    console.log("[VideoThumb] name:", modelData.name, "status:", status, "source:", source);
+                }
+
+                opacity: status === Image.Ready ? 1 : 0.3
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 1000
+                        easing.type: Easing.OutQuad
+                    }
+                }
+            }
+
+            // Fallback if CachingImage fails to load (images only)
             Image {
                 id: fallbackImage
 
                 anchors.fill: parent
-                source: fallbackTimer.triggered && cachingImage.status !== Image.Ready ? modelData.path : ""
+                source: !delegateItem.isVideoFile && fallbackTimer.triggered && cachingImage.status !== Image.Ready ? modelData.path : ""
                 asynchronous: true
                 fillMode: Image.PreserveAspectCrop
                 cache: true
@@ -118,7 +218,7 @@ GridView {
                 property bool triggered: false
 
                 interval: 800
-                running: cachingImage.status === Image.Loading || cachingImage.status === Image.Null
+                running: !delegateItem.isVideoFile && (cachingImage.status === Image.Loading || cachingImage.status === Image.Null)
                 onTriggered: triggered = true
             }
 
@@ -185,6 +285,18 @@ GridView {
                     duration: 150
                     easing.type: Easing.OutQuad
                 }
+            }
+
+            // Video icon indicator
+            MaterialIcon {
+                anchors.left: parent.left
+                anchors.top: parent.top
+                anchors.margins: Appearance.padding.small
+
+                visible: delegateItem.isVideoFile
+                text: "play_circle"
+                color: Colours.palette.m3onSurface
+                font.pointSize: Appearance.font.size.large
             }
 
             MaterialIcon {

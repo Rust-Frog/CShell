@@ -50,7 +50,13 @@ PathView {
         readonly property string search: root.search.text.split(" ").slice(1).join(" ")
 
         values: Wallpapers.query(search)
-        onValuesChanged: root.currentIndex = search ? 0 : values.findIndex(w => w.path === Wallpapers.actualCurrent)
+        onValuesChanged: {
+            console.log("[WallpaperList] Query changed - search:", search, "count:", values.length);
+            for (let i = 0; i < values.length; i++) {
+                console.log("[WallpaperList] Item", i, "- name:", values[i].name, "path:", values[i].path);
+            }
+            root.currentIndex = search ? 0 : values.findIndex(w => w.path === Wallpapers.actualCurrent)
+        }
     }
 
     Component.onCompleted: currentIndex = Wallpapers.list.findIndex(w => w.path === Wallpapers.actualCurrent)
