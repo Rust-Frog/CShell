@@ -21,6 +21,8 @@ Item {
         anchors.fill: parent
         spacing: Appearance.spacing.normal
 
+        BlueLightFilter {}
+
         IdleInhibit {}
 
         Record {
