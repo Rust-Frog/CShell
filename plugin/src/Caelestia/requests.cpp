@@ -24,6 +24,7 @@ void Requests::get(const QUrl& url, QJSValue onSuccess, QJSValue onError, QJSVal
     request.setRawHeader("Cache-Control", "no-cache, no-store");
     request.setRawHeader("Pragma", "no-cache");
     request.setRawHeader("Connection", "close");
+    request.setTransferTimeout(30000);  // 30 second timeout to prevent hung connections
 
     if (headers.isObject()) {
         QJSValueIterator it(headers);
@@ -34,7 +35,6 @@ void Requests::get(const QUrl& url, QJSValue onSuccess, QJSValue onError, QJSVal
     }
 
     auto reply = m_manager->get(request);
-    reply->setTransferTimeout(30000);  // 30 second timeout to prevent hung connections
 
     QObject::connect(reply, &QNetworkReply::finished, [reply, onSuccess, onError]() {
         if (reply->error() == QNetworkReply::NoError) {
