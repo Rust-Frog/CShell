@@ -6,15 +6,15 @@
 #include <qfileinfo.h>
 #include <qfuturewatcher.h>
 #include <qimagereader.h>
-#include <qmutex.h>
 #include <qpainter.h>
+#include <qreadwritelock.h>
 #include <qtconcurrentrun.h>
 
 namespace caelestia::internal {
 
 // Static member definitions
 QHash<QString, QString> CachingImageManager::s_sha256Cache;
-QMutex CachingImageManager::s_sha256CacheMutex;
+QReadWriteLock CachingImageManager::s_sha256CacheLock;
 
 qreal CachingImageManager::effectiveScale() const {
     if (m_item && m_item->window()) {
@@ -199,9 +199,9 @@ void CachingImageManager::createCache(
 }
 
 QString CachingImageManager::sha256sum(const QString& path) {
-    // Check cache first (with mutex for thread safety)
+    // Check cache first with read lock (allows concurrent reads)
     {
-        QMutexLocker locker(&s_sha256CacheMutex);
+        QReadLocker locker(&s_sha256CacheLock);
         const auto it = s_sha256Cache.constFind(path);
         if (it != s_sha256Cache.constEnd()) {
             return it.value();
@@ -221,9 +221,9 @@ QString CachingImageManager::sha256sum(const QString& path) {
 
     const QString result = hash.result().toHex();
 
-    // Store in cache (with mutex for thread safety)
+    // Store in cache with write lock (exclusive access)
     {
-        QMutexLocker locker(&s_sha256CacheMutex);
+        QWriteLocker locker(&s_sha256CacheLock);
         s_sha256Cache.insert(path, result);
     }
 

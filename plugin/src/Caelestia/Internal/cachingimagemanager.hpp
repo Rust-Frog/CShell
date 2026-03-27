@@ -2,10 +2,10 @@
 
 #include <QtQuick/qquickitem.h>
 #include <qhash.h>
-#include <qmutex.h>
 #include <qobject.h>
 #include <qpointer.h>
 #include <qqmlintegration.h>
+#include <qreadwritelock.h>
 
 namespace caelestia::internal {
 
@@ -58,8 +58,9 @@ private:
     QMetaObject::Connection m_heightConn;
 
     // Static cache for SHA256 results to avoid re-hashing the same file
+    // Using QReadWriteLock for better read concurrency (multiple readers, single writer)
     static QHash<QString, QString> s_sha256Cache;
-    static QMutex s_sha256CacheMutex;
+    static QReadWriteLock s_sha256CacheLock;
 
     [[nodiscard]] qreal effectiveScale() const;
     [[nodiscard]] QSize effectiveSize() const;

@@ -71,9 +71,13 @@ signals:
     void historyLengthChanged();
     void lineWidthChanged();
 
+protected:
+    void updatePolish() override;
+
 private:
     void drawLine(QPainter* painter, CircularBuffer* buffer, const QColor& color, qreal fillAlpha);
     void connectBuffer(CircularBuffer* buffer);
+    void scheduleRepaint();  // Coalesces multiple update requests
 
     CircularBuffer* m_line1 = nullptr;
     CircularBuffer* m_line2 = nullptr;

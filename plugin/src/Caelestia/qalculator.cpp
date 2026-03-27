@@ -8,7 +8,8 @@ namespace caelestia {
 QMutex Qalculator::s_calculatorMutex;
 
 Qalculator::Qalculator(QObject* parent)
-    : QObject(parent) {
+    : QObject(parent)
+    , m_debounceTimer(new QTimer(this)) {
     if (!CALCULATOR) {
         // Calculator constructor sets the global `calculator` pointer (CALCULATOR macro),
         // but we need to assign it to a var so compiler doesn't flag it as a leak
@@ -18,6 +19,13 @@ Qalculator::Qalculator(QObject* parent)
         CALCULATOR->loadGlobalDefinitions();
         CALCULATOR->loadLocalDefinitions();
     }
+
+    // Setup debounce timer - 100ms delay before calculating
+    m_debounceTimer->setSingleShot(true);
+    m_debounceTimer->setInterval(100);
+    connect(m_debounceTimer, &QTimer::timeout, this, [this]() {
+        doEvalAsync(m_pendingExpr);
+    });
 }
 
 QString Qalculator::eval(const QString& expr, bool printExpr) const {
@@ -58,9 +66,12 @@ QString Qalculator::eval(const QString& expr, bool printExpr) const {
 }
 
 void Qalculator::evalAsync(const QString& expr) {
-    const quint64 gen = ++m_generation;
+    // Store pending expression and restart debounce timer
+    m_pendingExpr = expr;
 
     if (expr.isEmpty()) {
+        // Clear immediately for empty input
+        m_debounceTimer->stop();
         if (!m_result.isEmpty()) {
             m_result.clear();
             emit resultChanged();
@@ -76,10 +87,17 @@ void Qalculator::evalAsync(const QString& expr) {
         return;
     }
 
+    // Show busy state immediately, but debounce the actual calculation
     if (!m_busy) {
         m_busy = true;
         emit busyChanged();
     }
+
+    m_debounceTimer->start();
+}
+
+void Qalculator::doEvalAsync(const QString& expr) {
+    const quint64 gen = ++m_generation;
 
     QtConcurrent::run([expr]() -> QPair<QString, QString> {
         QMutexLocker locker(&s_calculatorMutex);

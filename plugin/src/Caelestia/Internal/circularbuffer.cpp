@@ -33,6 +33,7 @@ void CircularBuffer::setCapacity(int capacity) {
         m_count++;
     }
 
+    invalidateCache();
     emit capacityChanged();
     emit countChanged();
     emit valuesChanged();
@@ -42,22 +43,18 @@ int CircularBuffer::count() const {
     return m_count;
 }
 
-QList<qreal> CircularBuffer::values() const {
-    QList<qreal> result;
-    result.reserve(m_count);
-    for (int i = 0; i < m_count; ++i)
-        result.append(at(i));
-    return result;
+const QList<qreal>& CircularBuffer::values() const {
+    if (!m_cacheValid) {
+        rebuildCache();
+    }
+    return m_cachedValues;
 }
 
 qreal CircularBuffer::maximum() const {
-    if (m_count == 0)
-        return 0.0;
-
-    qreal maxVal = at(0);
-    for (int i = 1; i < m_count; ++i)
-        maxVal = std::max(maxVal, at(i));
-    return maxVal;
+    if (!m_cacheValid) {
+        rebuildCache();
+    }
+    return m_cachedMaximum;
 }
 
 void CircularBuffer::push(qreal value) {
@@ -70,6 +67,7 @@ void CircularBuffer::push(qreal value) {
         m_count++;
         emit countChanged();
     }
+    invalidateCache();
     emit valuesChanged();
 }
 
@@ -79,6 +77,7 @@ void CircularBuffer::clear() {
 
     m_head = 0;
     m_count = 0;
+    invalidateCache();
     emit countChanged();
     emit valuesChanged();
 }
@@ -89,6 +88,24 @@ qreal CircularBuffer::at(int index) const {
 
     const int actualIndex = (m_head - m_count + index + m_capacity) % m_capacity;
     return m_data[actualIndex];
+}
+
+void CircularBuffer::invalidateCache() {
+    m_cacheValid = false;
+}
+
+void CircularBuffer::rebuildCache() const {
+    m_cachedValues.clear();
+    m_cachedValues.reserve(m_count);
+    m_cachedMaximum = 0.0;
+
+    for (int i = 0; i < m_count; ++i) {
+        const qreal val = at(i);
+        m_cachedValues.append(val);
+        m_cachedMaximum = std::max(m_cachedMaximum, val);
+    }
+
+    m_cacheValid = true;
 }
 
 } // namespace caelestia::internal

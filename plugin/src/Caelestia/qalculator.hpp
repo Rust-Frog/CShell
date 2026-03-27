@@ -3,6 +3,7 @@
 #include <qmutex.h>
 #include <qobject.h>
 #include <qqmlintegration.h>
+#include <qtimer.h>
 
 namespace caelestia {
 
@@ -37,6 +38,12 @@ private:
     QString m_rawResult;
     bool m_busy = false;
     quint64 m_generation = 0;
+
+    // Debounce timer to avoid queueing calculations for every keystroke
+    QTimer* m_debounceTimer;
+    QString m_pendingExpr;
+
+    void doEvalAsync(const QString& expr);
 };
 
 } // namespace caelestia

@@ -22,7 +22,7 @@ public:
     void setCapacity(int capacity);
 
     [[nodiscard]] int count() const;
-    [[nodiscard]] QList<qreal> values() const;
+    [[nodiscard]] const QList<qreal>& values() const;
     [[nodiscard]] qreal maximum() const;
 
     Q_INVOKABLE void push(qreal value);
@@ -39,6 +39,14 @@ private:
     int m_head = 0;
     int m_count = 0;
     int m_capacity = 0;
+
+    // Cached values - rebuilt only when dirty
+    mutable QList<qreal> m_cachedValues;
+    mutable qreal m_cachedMaximum = 0.0;
+    mutable bool m_cacheValid = false;
+
+    void invalidateCache();
+    void rebuildCache() const;
 };
 
 } // namespace caelestia::internal
