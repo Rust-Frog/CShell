@@ -20,17 +20,31 @@ Singleton {
         return alias?.to ?? player.identity;
     }
 
-    Connections {
-        function onPostTrackChanged() {
-            if (!Config.utilities.toasts.nowPlaying) {
-                return;
-            }
-            if (root.active.trackArtist != "" && root.active.trackTitle != "") {
-                Toaster.toast(qsTr("Now Playing"), qsTr("%1 - %2").arg(root.active.trackArtist).arg(root.active.trackTitle), "music_note");
-            }
-        }
+    property var _prevActive: null
 
-        target: root.active
+    onActiveChanged: {
+        if (_prevActive) {
+            _prevActive.postTrackChanged.disconnect(_onPostTrackChanged);
+        }
+        if (root.active) {
+            root.active.postTrackChanged.connect(_onPostTrackChanged);
+            _prevActive = root.active;
+        }
+    }
+
+    function _onPostTrackChanged() {
+        if (!Config.utilities.toasts.nowPlaying) return;
+        const active = root.active;
+        if (active && active.trackArtist != "" && active.trackTitle != "") {
+            Toaster.toast(qsTr("Now Playing"), qsTr("%1 - %2").arg(active.trackArtist).arg(active.trackTitle), "music_note");
+        }
+    }
+
+    Component.onCompleted: {
+        if (root.active) {
+            root.active.postTrackChanged.connect(_onPostTrackChanged);
+            _prevActive = root.active;
+        }
     }
 
     PersistentProperties {
