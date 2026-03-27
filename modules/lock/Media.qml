@@ -5,6 +5,7 @@ import QtQuick.Layouts
 import qs.components
 import qs.components.effects
 import qs.services
+import qs.services as Services
 import qs.config
 
 Item {
@@ -18,7 +19,7 @@ Item {
 
     Image {
         anchors.fill: parent
-        source: Players.active?.trackArtUrl ?? "" // qmllint disable incompatible-type
+        source: Services.MediaThumbnail.thumbnailUrl || Players.active?.trackArtUrl || "" // qmllint disable incompatible-type
 
         asynchronous: true
         fillMode: Image.PreserveAspectCrop

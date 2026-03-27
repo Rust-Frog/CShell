@@ -3,6 +3,7 @@ import QtQuick.Shapes
 import Caelestia.Services
 import qs.components
 import qs.services
+import qs.services as Services
 import qs.config
 import qs.utils
 
@@ -106,7 +107,7 @@ Item {
 
             anchors.fill: parent
 
-            source: Players.active?.trackArtUrl ?? "" // qmllint disable incompatible-type
+            source: Services.MediaThumbnail.thumbnailUrl || Players.active?.trackArtUrl || "" // qmllint disable incompatible-type
             asynchronous: true
             fillMode: Image.PreserveAspectCrop
             sourceSize.width: width
