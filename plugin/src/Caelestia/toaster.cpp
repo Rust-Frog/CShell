@@ -14,8 +14,6 @@ Toast::Toast(const QString& title, const QString& message, const QString& icon, 
     , m_icon(icon)
     , m_type(type)
     , m_timeout(timeout) {
-    QTimer::singleShot(timeout, this, &Toast::close);
-
     if (m_icon.isEmpty()) {
         switch (m_type) {
         case Type::Success:
@@ -33,6 +31,7 @@ Toast::Toast(const QString& title, const QString& message, const QString& icon, 
         }
     }
 
+    // Validate and set default timeout based on type BEFORE starting timer
     if (timeout <= 0) {
         switch (m_type) {
         case Type::Warning:
@@ -46,6 +45,9 @@ Toast::Toast(const QString& title, const QString& message, const QString& icon, 
             break;
         }
     }
+
+    // Start timer with validated timeout
+    QTimer::singleShot(m_timeout, this, &Toast::close);
 }
 
 bool Toast::closed() const {

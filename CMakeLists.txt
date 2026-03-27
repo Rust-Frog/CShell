@@ -33,6 +33,22 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 
+# Enable Link-Time Optimization for Release builds (5-20% perf gain)
+include(CheckIPOSupported)
+check_ipo_supported(RESULT LTO_SUPPORTED OUTPUT LTO_ERROR)
+if(LTO_SUPPORTED)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
+    message(STATUS "LTO enabled for Release builds")
+else()
+    message(STATUS "LTO not supported: ${LTO_ERROR}")
+endif()
+
+# Release build optimizations
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_compile_options(-O3 -DNDEBUG)
+    message(STATUS "Release optimizations enabled (-O3)")
+endif()
+
 set(DISTRIBUTOR "Unset" CACHE STRING "Distributor")
 set(ENABLE_MODULES "extras;plugin;shell" CACHE STRING "Modules to build/install")
 set(INSTALL_LIBDIR "usr/lib/caelestia" CACHE STRING "Library install dir")

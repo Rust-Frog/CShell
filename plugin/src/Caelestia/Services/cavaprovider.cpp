@@ -30,27 +30,25 @@ void CavaProcessor::process() {
     // Process in data via cava
     cava_execute(m_in, count, m_out, m_plan);
 
-    // Apply monstercat filter
-    QVector<double> values(m_bars);
-
+    // Apply monstercat filter using reusable work buffer
     // Left to right pass
     const double inv = 1.0 / 1.5;
     double carry = 0.0;
     for (int i = 0; i < m_bars; ++i) {
         carry = std::max(m_out[i], carry * inv);
-        values[i] = carry;
+        m_workBuffer[i] = carry;
     }
 
     // Right to left pass and combine
     carry = 0.0;
     for (int i = m_bars - 1; i >= 0; --i) {
         carry = std::max(m_out[i], carry * inv);
-        values[i] = std::max(values[i], carry);
+        m_workBuffer[i] = std::max(m_workBuffer[i], carry);
     }
 
     // Update values
-    if (values != m_values) {
-        m_values = std::move(values);
+    if (m_workBuffer != m_values) {
+        m_values = m_workBuffer;
         emit valuesChanged(m_values);
     }
 }
@@ -63,6 +61,7 @@ void CavaProcessor::setBars(int bars) {
 
     if (m_bars != bars) {
         m_bars = bars;
+        m_workBuffer.resize(bars);  // Resize work buffer to avoid allocation in process()
         reload();
     }
 }

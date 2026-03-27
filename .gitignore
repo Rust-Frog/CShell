@@ -1,4 +1,6 @@
 .direnv
+.vscode
+.idea
 /result
 /.qmlls.ini
 build/

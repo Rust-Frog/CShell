@@ -6,10 +6,15 @@
 #include <qfileinfo.h>
 #include <qfuturewatcher.h>
 #include <qimagereader.h>
+#include <qmutex.h>
 #include <qpainter.h>
 #include <qtconcurrentrun.h>
 
 namespace caelestia::internal {
+
+// Static member definitions
+QHash<QString, QString> CachingImageManager::s_sha256Cache;
+QMutex CachingImageManager::s_sha256CacheMutex;
 
 qreal CachingImageManager::effectiveScale() const {
     if (m_item && m_item->window()) {
@@ -194,6 +199,16 @@ void CachingImageManager::createCache(
 }
 
 QString CachingImageManager::sha256sum(const QString& path) {
+    // Check cache first (with mutex for thread safety)
+    {
+        QMutexLocker locker(&s_sha256CacheMutex);
+        const auto it = s_sha256Cache.constFind(path);
+        if (it != s_sha256Cache.constEnd()) {
+            return it.value();
+        }
+    }
+
+    // Not in cache, compute SHA256
     QFile file(path);
     if (!file.open(QIODevice::ReadOnly)) {
         qWarning() << "CachingImageManager::sha256sum: failed to open" << path;
@@ -204,7 +219,15 @@ QString CachingImageManager::sha256sum(const QString& path) {
     hash.addData(&file);
     file.close();
 
-    return hash.result().toHex();
+    const QString result = hash.result().toHex();
+
+    // Store in cache (with mutex for thread safety)
+    {
+        QMutexLocker locker(&s_sha256CacheMutex);
+        s_sha256Cache.insert(path, result);
+    }
+
+    return result;
 }
 
 } // namespace caelestia::internal

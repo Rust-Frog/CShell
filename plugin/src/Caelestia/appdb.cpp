@@ -184,6 +184,7 @@ void AppDb::setFavouriteApps(const QStringList& favApps) {
         }
     }
 
+    m_sortedAppsDirty = true; // Mark dirty since favourite apps affect sort order
     emit appsChanged();
 }
 
@@ -211,8 +212,9 @@ void AppDb::incrementFrequency(const QString& id) {
 
     auto* app = m_apps.value(id);
     if (app) {
-        const auto before = getSortedApps();
+        const auto before = m_sortedApps;
         app->incrementFrequency();
+        m_sortedAppsDirty = true; // Mark dirty since frequency affects sort order
         getSortedApps();
         if (before != m_sortedApps) {
             emit appsChanged();
@@ -223,6 +225,10 @@ void AppDb::incrementFrequency(const QString& id) {
 }
 
 QList<AppEntry*>& AppDb::getSortedApps() const {
+    if (!m_sortedAppsDirty) {
+        return m_sortedApps;
+    }
+
     m_sortedApps = m_apps.values();
 
     // Pre-compute favourite status to avoid repeated regex matching during sort
@@ -242,6 +248,8 @@ QList<AppEntry*>& AppDb::getSortedApps() const {
             return a->frequency() > b->frequency();
         return a->name().localeAwareCompare(b->name()) < 0;
     });
+
+    m_sortedAppsDirty = false;
     return m_sortedApps;
 }
 
@@ -269,12 +277,13 @@ quint32 AppDb::getFrequency(const QString& id) const {
 }
 
 void AppDb::updateAppFrequencies() {
-    const auto before = getSortedApps();
+    const auto before = m_sortedApps;
 
     for (auto* app : std::as_const(m_apps)) {
         app->setFrequency(getFrequency(app->id()));
     }
 
+    m_sortedAppsDirty = true; // Mark dirty since frequencies affect sort order
     getSortedApps();
     if (before != m_sortedApps) {
         emit appsChanged();
@@ -284,23 +293,25 @@ void AppDb::updateAppFrequencies() {
 void AppDb::updateApps() {
     bool dirty = false;
 
+    // Build newIds set while also adding new entries (single loop instead of two)
+    QSet<QString> newIds;
+    newIds.reserve(m_entries.size());
+
     for (const auto& entry : std::as_const(m_entries)) {
         const auto id = entry->property("id").toString();
+        newIds.insert(id);
+
         if (!m_apps.contains(id)) {
             dirty = true;
             auto* const newEntry = new AppEntry(entry, getFrequency(id), this);
             QObject::connect(newEntry, &QObject::destroyed, this, [id, this]() {
                 if (m_apps.remove(id)) {
+                    m_sortedAppsDirty = true;
                     emit appsChanged();
                 }
             });
             m_apps.insert(id, newEntry);
         }
-    }
-
-    QSet<QString> newIds;
-    for (const auto& entry : std::as_const(m_entries)) {
-        newIds.insert(entry->property("id").toString());
     }
 
     for (auto it = m_apps.begin(); it != m_apps.end();) {
@@ -314,6 +325,7 @@ void AppDb::updateApps() {
     }
 
     if (dirty) {
+        m_sortedAppsDirty = true;
         emit appsChanged();
     }
 }

@@ -184,12 +184,13 @@ void ImageAnalyser::analyse(QPromise<AnalyseResult>& promise, const QImage& imag
     int count = 0;
 
     for (int y = 0; y < height; ++y) {
+        // Check cancellation every 16 rows instead of per-pixel (much faster)
+        if ((y & 0xF) == 0 && promise.isCanceled()) {
+            return;
+        }
+
         const uchar* line = data + y * bytesPerLine;
         for (int x = 0; x < width; ++x) {
-            if (promise.isCanceled()) {
-                return;
-            }
-
             const uchar* pixel = line + x * 4;
 
             if (pixel[3] == 0) {
@@ -210,16 +211,13 @@ void ImageAnalyser::analyse(QPromise<AnalyseResult>& promise, const QImage& imag
     }
 
     quint32 dominantColour = 0;
-    int maxCount = 0;
-    for (const auto& [colour, colourCount] : colours) {
+    if (!colours.empty()) {
         if (promise.isCanceled()) {
             return;
         }
-
-        if (colourCount > maxCount) {
-            dominantColour = colour;
-            maxCount = colourCount;
-        }
+        const auto maxIt = std::max_element(colours.begin(), colours.end(),
+            [](const auto& a, const auto& b) { return a.second < b.second; });
+        dominantColour = maxIt->first;
     }
 
     promise.addResult(qMakePair(QColor((0xFFu << 24) | dominantColour), count == 0 ? 0.0 : totalLuminance / count));

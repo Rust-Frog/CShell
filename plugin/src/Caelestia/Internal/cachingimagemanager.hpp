@@ -1,6 +1,8 @@
 #pragma once
 
 #include <QtQuick/qquickitem.h>
+#include <qhash.h>
+#include <qmutex.h>
 #include <qobject.h>
 #include <qpointer.h>
 #include <qqmlintegration.h>
@@ -54,6 +56,10 @@ private:
 
     QMetaObject::Connection m_widthConn;
     QMetaObject::Connection m_heightConn;
+
+    // Static cache for SHA256 results to avoid re-hashing the same file
+    static QHash<QString, QString> s_sha256Cache;
+    static QMutex s_sha256CacheMutex;
 
     [[nodiscard]] qreal effectiveScale() const;
     [[nodiscard]] QSize effectiveSize() const;
