@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
+import QtMultimedia
 import qs.components
 import qs.components.filedialog
 import qs.components.images
@@ -12,16 +13,27 @@ Item {
     id: root
 
     property string source: Wallpapers.current
-    property Image current: one
+    property string mediaType: Wallpapers.mediaType
+    property Item current: one
     property bool completed
 
+    // Video extensions for detection
+    readonly property var videoExtensions: [".mp4", ".mkv", ".webm", ".avi", ".mov", ".m4v", ".flv"]
+
+    function isVideo(path: string): bool {
+        if (!path) return false;
+        const lower = path.toLowerCase();
+        return videoExtensions.some(ext => lower.endsWith(ext));
+    }
+
     onSourceChanged: {
-        if (!source)
+        if (!source) {
             current = null;
-        else if (current === one)
+        } else if (current === one) {
             two.update();
-        else
+        } else {
             one.update();
+        }
     }
 
     Component.onCompleted: {
@@ -32,6 +44,7 @@ Item {
             });
     }
 
+    // Missing wallpaper fallback UI
     Loader {
         asynchronous: true
         anchors.fill: parent
@@ -102,48 +115,118 @@ Item {
         }
     }
 
-    Img {
+    // Two wallpaper slots for crossfade transitions
+    WallpaperSlot {
         id: one
     }
 
-    Img {
+    WallpaperSlot {
         id: two
     }
 
-    component Img: CachingImage {
-        id: img
+    // Unified wallpaper slot that handles both images and videos
+    component WallpaperSlot: Item {
+        id: slot
 
         function update(): void {
-            if (path === root.source)
+            const newSource = root.source;
+            const newIsVideo = root.isVideo(newSource);
+            
+            if (currentSource === newSource) {
                 root.current = this;
-            else
-                path = root.source;
+                return;
+            }
+            
+            currentSource = newSource;
+            slotIsVideo = newIsVideo;
+            
+            if (newIsVideo) {
+                imageLoader.active = false;
+                videoLoader.active = true;
+            } else {
+                videoLoader.active = false;
+                imageLoader.active = true;
+            }
         }
 
-        anchors.fill: parent
+        property string currentSource: ""
+        property bool slotIsVideo: false
+        property bool ready: slotIsVideo ? videoReady : imageReady
+        property bool imageReady: imageLoader.item?.status === Image.Ready
+        property bool videoReady: videoLoader.item?.ready ?? false
 
+        anchors.fill: parent
         opacity: 0
         scale: Wallpapers.showPreview ? 1 : 0.8
 
-        onStatusChanged: {
-            if (status === Image.Ready)
+        onReadyChanged: {
+            if (ready)
                 root.current = this;
         }
 
         states: State {
             name: "visible"
-            when: root.current === img
+            when: root.current === slot
 
             PropertyChanges {
-                img.opacity: 1
-                img.scale: 1
+                slot.opacity: 1
+                slot.scale: 1
             }
         }
 
         transitions: Transition {
             Anim {
-                target: img
+                target: slot
                 properties: "opacity,scale"
+            }
+        }
+
+        // Image loader
+        Loader {
+            id: imageLoader
+            anchors.fill: parent
+            active: false
+            asynchronous: true
+
+            sourceComponent: CachingImage {
+                path: slot.currentSource
+            }
+        }
+
+        // Video loader
+        Loader {
+            id: videoLoader
+            anchors.fill: parent
+            active: false
+            asynchronous: true
+
+            sourceComponent: Item {
+                id: videoItem
+                property bool ready: player.playbackState === MediaPlayer.PlayingState
+
+                MediaPlayer {
+                    id: player
+                    source: slot.currentSource ? `file://${slot.currentSource}` : ""
+                    loops: MediaPlayer.Infinite
+                    videoOutput: videoOutput
+                    audioOutput: null  // Mute - wallpapers should be silent
+
+                    onSourceChanged: {
+                        if (source)
+                            play();
+                    }
+
+                    Component.onCompleted: {
+                        if (source)
+                            play();
+                    }
+                }
+
+                VideoOutput {
+                    id: videoOutput
+                    anchors.fill: parent
+                    fillMode: VideoOutput.PreserveAspectCrop
+                }
             }
         }
     }

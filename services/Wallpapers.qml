@@ -12,9 +12,14 @@ Searcher {
     id: root
 
     readonly property string currentNamePath: `${Paths.state}/wallpaper/path.txt`
+    readonly property string currentTypePath: `${Paths.state}/wallpaper/type.txt`
     readonly property list<string> smartArg: Config.services.smartScheme ? [] : ["--no-smart"]
 
+    // Media type: "image" or "video" - read from type.txt
+    property string mediaType: "image"
+
     property bool showPreview: false
+    // current: what the background should display (actual path - image or video)
     readonly property string current: showPreview ? previewPath : actualCurrent
     property string previewPath
     property string actualCurrent
@@ -62,6 +67,17 @@ Searcher {
         target: "wallpaper"
     }
 
+    // Watch type.txt - must be read BEFORE path.txt triggers displayPath recalc
+    FileView {
+        path: root.currentTypePath
+        watchChanges: true
+        onFileChanged: reload()
+        onLoaded: {
+            root.mediaType = text().trim() || "image";
+        }
+    }
+
+    // Watch path.txt - triggers actualCurrent update
     FileView {
         path: root.currentNamePath
         watchChanges: true
