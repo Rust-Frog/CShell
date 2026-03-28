@@ -14,8 +14,8 @@ Item {
     required property FileSystemEntry modelData
     required property DrawerVisibilities visibilities
 
-    scale: 0.5
-    opacity: 0
+    scale: PathView.isCurrentItem ? 1 : (PathView.onPath ? 0.8 : 0)
+    opacity: PathView.onPath ? 1 : 0
     z: PathView.z ?? 0
 
     readonly property var videoExtensions: [".mp4", ".mkv", ".webm", ".avi", ".mov", ".m4v", ".flv"]
@@ -28,9 +28,6 @@ Item {
     property bool generateThumb: false
 
     Component.onCompleted: {
-        scale = Qt.binding(() => PathView.isCurrentItem ? 1 : PathView.onPath ? 0.8 : 0);
-        opacity = Qt.binding(() => PathView.onPath ? 1 : 0);
-        
         if (isVideo) {
             generateThumb = true;
         }
@@ -91,24 +88,14 @@ Item {
             visible: isVideo && !thumbPath
         }
 
-        // Use regular Image for images (debugging)
         Image {
-            id: imgLoader
+            id: backgroundElement
             
-            source: isVideo ? "" : "file://" + root.modelData.path
-            smooth: !root.PathView.view.moving
-            cache: true
-            asynchronous: true
-            fillMode: Image.PreserveAspectCrop
-
-            anchors.fill: parent
-        }
-
-        // Video thumbnail
-        Image {
-            id: videoThumb
-            
-            source: isVideo && thumbPath ? "file://" + thumbPath : ""
+            source: {
+                if (isVideo)
+                    return thumbPath ? "file://" + thumbPath : "";
+                return "file://" + root.modelData.path;
+            }
             smooth: !root.PathView.view.moving
             cache: true
             asynchronous: true
