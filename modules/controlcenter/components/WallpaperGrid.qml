@@ -34,11 +34,6 @@ GridView {
     model: Wallpapers.list
 
     Component.onCompleted: {
-        console.log("[WallpaperGrid] Model loaded, count:", Wallpapers.list.length);
-        for (let i = 0; i < Math.min(Wallpapers.list.length, 10); i++) {
-            const item = Wallpapers.list[i];
-            console.log("[WallpaperGrid] Item", i, "- name:", item.name, "path:", item.path);
-        }
     }
 
     clip: true
@@ -61,7 +56,6 @@ GridView {
         height: root.cellHeight
 
         Component.onCompleted: {
-            console.log("[Delegate] Created index:", index, "name:", modelData.name, "path:", modelData.path, "isVideo:", isVideoFile);
         }
 
         // Generate video thumbnail on demand - use Timer to delay start
@@ -71,7 +65,6 @@ GridView {
             repeat: false
             onTriggered: {
                 if (delegateItem.isVideoFile) {
-                    console.log("[Delegate] Triggering thumbnail for:", modelData.name);
                     delegateItem.shouldGenerateThumb = true;
                 }
             }
@@ -82,20 +75,11 @@ GridView {
 
             command: ["caelestia", "wallpaper", "-T", delegateItem.modelData.path]
             running: delegateItem.shouldGenerateThumb && delegateItem.isVideoFile
-            
-            onRunningChanged: {
-                console.log("[Process] running changed to:", running, "for:", delegateItem.modelData.name);
-            }
 
             stdout: StdioCollector {
                 onStreamFinished: {
-                    console.log("[Process] stdout finished, output:", text.trim());
                     delegateItem.thumbnailPath = text.trim();
                 }
-            }
-
-            onError: {
-                console.log("[Process] ERROR:", message);
             }
         }
 
@@ -146,10 +130,6 @@ GridView {
                 smooth: true
                 sourceSize: Qt.size(width, height)
 
-                onStatusChanged: {
-                    console.log("[Image] name:", modelData.name, "status:", status, "errorString:", errorString);
-                }
-
                 opacity: status === Image.Ready ? 1 : 0.3
 
                 Behavior on opacity {
@@ -173,10 +153,6 @@ GridView {
                 antialiasing: true
                 smooth: true
                 sourceSize: Qt.size(width, height)
-
-                onStatusChanged: {
-                    console.log("[VideoThumb] name:", modelData.name, "status:", status, "source:", source);
-                }
 
                 opacity: status === Image.Ready ? 1 : 0.3
 
