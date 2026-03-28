@@ -55,9 +55,6 @@ GridView {
         width: root.cellWidth
         height: root.cellHeight
 
-        Component.onCompleted: {
-        }
-
         // Generate video thumbnail on demand - use Timer to delay start
         Timer {
             id: thumbTimer
