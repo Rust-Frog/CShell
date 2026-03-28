@@ -35,13 +35,12 @@ PathView {
             return 0;
 
         const maxItemsOnScreen = Math.floor(maxWidth / itemWidth);
-        const visible = Math.min(maxItemsOnScreen, Config.launcher.maxWallpapers, scriptModel.values.length);
-
-        if (visible === 2)
-            return 1;
-        if (visible > 1 && visible % 2 === 0)
-            return visible - 1;
-        return visible;
+        let maxItems = Math.min(maxItemsOnScreen, Config.launcher.maxWallpapers);
+        
+        if (maxItems > 1 && maxItems % 2 === 0)
+            maxItems -= 1;
+            
+        return Math.min(maxItems, scriptModel.values.length);
     }
 
     model: ScriptModel {
@@ -51,10 +50,6 @@ PathView {
 
         values: Wallpapers.query(search)
         onValuesChanged: {
-            console.log("[WallpaperList] Query changed - search:", search, "count:", values.length);
-            for (let i = 0; i < values.length; i++) {
-                console.log("[WallpaperList] Item", i, "- name:", values[i].name, "path:", values[i].path);
-            }
             root.currentIndex = search ? 0 : values.findIndex(w => w.path === Wallpapers.actualCurrent)
         }
     }

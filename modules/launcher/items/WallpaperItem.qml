@@ -28,7 +28,6 @@ Item {
     property bool generateThumb: false
 
     Component.onCompleted: {
-        console.log("[WallpaperItem] Created - name:", modelData.name, "path:", modelData.path, "isVideo:", isVideo);
         scale = Qt.binding(() => PathView.isCurrentItem ? 1 : PathView.onPath ? 0.8 : 0);
         opacity = Qt.binding(() => PathView.onPath ? 1 : 0);
         
@@ -43,7 +42,6 @@ Item {
         
         stdout: StdioCollector {
             onStreamFinished: {
-                console.log("[Process] thumb for:", root.modelData.name, "output:", text.trim());
                 root.thumbPath = text.trim();
             }
         }
@@ -54,7 +52,6 @@ Item {
 
     StateLayer {
         function onClicked(): void {
-            console.log("[WallpaperItem] Clicked - name:", modelData.name, "path:", modelData.path);
             Wallpapers.setWallpaper(root.modelData.path);
             root.visibilities.launcher = false;
         }
@@ -105,10 +102,6 @@ Item {
             fillMode: Image.PreserveAspectCrop
 
             anchors.fill: parent
-
-            onStatusChanged: {
-                console.log("[Image] name:", root.modelData.name, "status:", status, "source:", source);
-            }
         }
 
         // Video thumbnail
@@ -122,10 +115,6 @@ Item {
             fillMode: Image.PreserveAspectCrop
 
             anchors.fill: parent
-
-            onStatusChanged: {
-                console.log("[VideoThumb] name:", root.modelData.name, "status:", status);
-            }
         }
     }
 
