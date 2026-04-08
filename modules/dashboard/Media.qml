@@ -405,7 +405,7 @@ Item {
                 playing: Players.active?.isPlaying ?? false
                 speed: Audio.beatTracker.bpm / Appearance.anim.mediaGifSpeedAdjustment // qmllint disable unresolved-type
                 source: Paths.absolutePath(Config.paths.mediaGif)
-                asynchronous: true
+                asynchronous: false
                 fillMode: AnimatedImage.PreserveAspectFit
             }
         }

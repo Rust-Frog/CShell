@@ -52,7 +52,7 @@ Column {
         sourceSize.height: height
 
         playing: visible
-        asynchronous: true
+        asynchronous: false
         speed: Appearance.anim.sessionGifSpeed
         source: Paths.absolutePath(Config.paths.sessionGif)
     }
