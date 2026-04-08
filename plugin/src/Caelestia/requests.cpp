@@ -27,7 +27,7 @@ void Requests::get(const QUrl& url, QJSValue onSuccess, QJSValue onError, QJSVal
     request.setRawHeader("Cache-Control", "no-cache, no-store");
     request.setRawHeader("Pragma", "no-cache");
     request.setRawHeader("Connection", "close");
-    request.setTransferTimeout(30000);  // 30 second timeout to prevent hung connections
+    request.setTransferTimeout(30000); // 30 second timeout to prevent hung connections
 
     if (headers.isObject()) {
         QJSValueIterator it(headers);

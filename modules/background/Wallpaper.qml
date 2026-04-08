@@ -21,7 +21,8 @@ Item {
     readonly property var videoExtensions: [".mp4", ".mkv", ".webm", ".avi", ".mov", ".m4v", ".flv"]
 
     function isVideo(path: string): bool {
-        if (!path) return false;
+        if (!path)
+            return false;
         const lower = path.toLowerCase();
         return videoExtensions.some(ext => lower.endsWith(ext));
     }
@@ -131,15 +132,15 @@ Item {
         function update(): void {
             const newSource = root.source;
             const newIsVideo = root.isVideo(newSource);
-            
+
             if (currentSource === newSource) {
                 root.current = this;
                 return;
             }
-            
+
             currentSource = newSource;
             slotIsVideo = newIsVideo;
-            
+
             if (newIsVideo) {
                 imageLoader.active = false;
                 videoLoader.active = true;
@@ -150,9 +151,13 @@ Item {
         }
 
         property string currentSource: ""
+
         property bool slotIsVideo: false
+
         property bool ready: slotIsVideo ? videoReady : imageReady
+
         property bool imageReady: imageLoader.item?.status === Image.Ready
+
         property bool videoReady: videoLoader.item?.ready ?? false
 
         anchors.fill: parent
@@ -184,6 +189,7 @@ Item {
         // Image loader
         Loader {
             id: imageLoader
+
             anchors.fill: parent
             active: false
             asynchronous: true
@@ -196,16 +202,19 @@ Item {
         // Video loader
         Loader {
             id: videoLoader
+
             anchors.fill: parent
             active: false
             asynchronous: true
 
             sourceComponent: Item {
                 id: videoItem
+
                 property bool ready: player.playbackState === MediaPlayer.PlayingState
 
                 MediaPlayer {
                     id: player
+
                     source: slot.currentSource ? `file://${slot.currentSource}` : ""
                     loops: MediaPlayer.Infinite
                     videoOutput: videoOutput
@@ -224,6 +233,7 @@ Item {
 
                 VideoOutput {
                     id: videoOutput
+
                     anchors.fill: parent
                     fillMode: VideoOutput.PreserveAspectCrop
                 }

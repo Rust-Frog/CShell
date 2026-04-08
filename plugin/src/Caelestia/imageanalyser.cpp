@@ -218,8 +218,9 @@ void ImageAnalyser::analyse(QPromise<AnalyseResult>& promise, const QImage& imag
         if (promise.isCanceled()) {
             return;
         }
-        const auto maxIt = std::max_element(colours.begin(), colours.end(),
-            [](const auto& a, const auto& b) { return a.second < b.second; });
+        const auto maxIt = std::max_element(colours.begin(), colours.end(), [](const auto& a, const auto& b) {
+            return a.second < b.second;
+        });
         dominantColour = maxIt->first;
     }
 

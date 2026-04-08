@@ -80,7 +80,7 @@ public:
         Images,
         Files,
         Dirs,
-        Media  // Images + Videos (for wallpaper picker)
+        Media // Images + Videos (for wallpaper picker)
     };
     Q_ENUM(Filter)
 

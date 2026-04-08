@@ -297,9 +297,7 @@ void FileSystemModel::updateEntriesForDir(const QString& dir) {
         std::optional<QDirIterator> iter;
 
         // Video extensions for Media filter
-        static const QStringList videoExtensions = {
-            "*.mp4", "*.mkv", "*.webm", "*.avi", "*.mov", "*.m4v", "*.flv"
-        };
+        static const QStringList videoExtensions = { "*.mp4", "*.mkv", "*.webm", "*.avi", "*.mov", "*.m4v", "*.flv" };
 
         if (filter == Images || filter == Media) {
             QStringList extraNameFilters = nameFilters;
@@ -358,8 +356,7 @@ void FileSystemModel::updateEntriesForDir(const QString& dir) {
                 // For Media filter, accept both images and videos by extension only
                 // Skip QImageReader validation - use extension-based filtering instead
                 const QString suffix = path.section('.', -1).toLower();
-                static const QSet<QString> mediaSuffixes = {
-                    // Images (common formats)
+                static const QSet<QString> mediaSuffixes = { // Images (common formats)
                     "jpg", "jpeg", "png", "webp", "gif", "bmp", "tiff", "tif",
                     // Videos
                     "mp4", "mkv", "webm", "avi", "mov", "m4v", "flv"

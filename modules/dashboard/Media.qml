@@ -9,9 +9,9 @@ import Caelestia.Services
 import qs.components
 import qs.components.controls
 import qs.services
+import qs.services as Services
 import qs.config
 import qs.utils
-import qs.services as Services
 
 Item {
     id: root

@@ -36,10 +36,10 @@ PathView {
 
         const maxItemsOnScreen = Math.floor(maxWidth / itemWidth);
         let maxItems = Math.min(maxItemsOnScreen, Config.launcher.maxWallpapers);
-        
+
         if (maxItems > 1 && maxItems % 2 === 0)
             maxItems -= 1;
-            
+
         return Math.min(maxItems, scriptModel.values.length);
     }
 
@@ -50,7 +50,7 @@ PathView {
 
         values: Wallpapers.query(search)
         onValuesChanged: {
-            root.currentIndex = search ? 0 : values.findIndex(w => w.path === Wallpapers.actualCurrent)
+            root.currentIndex = search ? 0 : values.findIndex(w => w.path === Wallpapers.actualCurrent);
         }
     }
 

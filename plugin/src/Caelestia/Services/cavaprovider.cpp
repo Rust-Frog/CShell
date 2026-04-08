@@ -64,7 +64,7 @@ void CavaProcessor::setBars(int bars) {
 
     if (m_bars != bars) {
         m_bars = bars;
-        m_workBuffer.resize(bars);  // Resize work buffer to avoid allocation in process()
+        m_workBuffer.resize(bars); // Resize work buffer to avoid allocation in process()
         reload();
     }
 }

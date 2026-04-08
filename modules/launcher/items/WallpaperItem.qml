@@ -19,12 +19,14 @@ Item {
     z: PathView.z ?? 0
 
     readonly property var videoExtensions: [".mp4", ".mkv", ".webm", ".avi", ".mov", ".m4v", ".flv"]
+
     readonly property bool isVideo: {
         const lower = modelData.path.toLowerCase();
         return videoExtensions.some(ext => lower.endsWith(ext));
     }
 
     property string thumbPath: ""
+
     property bool generateThumb: false
 
     Component.onCompleted: {
@@ -36,7 +38,7 @@ Item {
     Process {
         command: ["caelestia", "wallpaper", "-T", root.modelData.path]
         running: root.generateThumb && root.isVideo
-        
+
         stdout: StdioCollector {
             onStreamFinished: {
                 root.thumbPath = text.trim();
@@ -45,6 +47,7 @@ Item {
     }
 
     implicitWidth: image.width + Appearance.padding.larger * 2
+
     implicitHeight: image.height + label.height + Appearance.spacing.small / 2 + Appearance.padding.large + Appearance.padding.normal
 
     StateLayer {
@@ -90,7 +93,7 @@ Item {
 
         Image {
             id: backgroundElement
-            
+
             source: {
                 if (isVideo)
                     return thumbPath ? "file://" + thumbPath : "";

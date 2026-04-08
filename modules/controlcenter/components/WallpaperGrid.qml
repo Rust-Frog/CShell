@@ -33,8 +33,7 @@ GridView {
 
     model: Wallpapers.list
 
-    Component.onCompleted: {
-    }
+    Component.onCompleted: {}
 
     clip: true
 
@@ -58,6 +57,7 @@ GridView {
         // Generate video thumbnail on demand - use Timer to delay start
         Timer {
             id: thumbTimer
+
             interval: 100
             repeat: false
             onTriggered: {
@@ -81,6 +81,7 @@ GridView {
         }
 
         property string thumbnailPath: ""
+
         property bool shouldGenerateThumb: false
 
         Component.onCompleted: {

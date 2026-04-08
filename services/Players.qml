@@ -29,13 +29,9 @@ Singleton {
             return player.trackArtUrl;
 
         const url = player.metadata["xesam:url"] ?? "";
-        
+
         // Match various YouTube URL formats
-        const patterns = [
-            /(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
-            /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
-            /youtube\.com\/v\/([a-zA-Z0-9_-]{11})/
-        ];
+        const patterns = [/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/, /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/, /youtube\.com\/v\/([a-zA-Z0-9_-]{11})/];
 
         for (const pattern of patterns) {
             const match = url.match(pattern);
@@ -57,7 +53,8 @@ Singleton {
     }
 
     function _onPostTrackChanged() {
-        if (!Config.utilities.toasts.nowPlaying) return;
+        if (!Config.utilities.toasts.nowPlaying)
+            return;
         const active = root.active;
         if (active && active.trackArtist != "" && active.trackTitle != "") {
             Toaster.toast(qsTr("Now Playing"), qsTr("%1 - %2").arg(active.trackArtist).arg(active.trackTitle), "music_note");

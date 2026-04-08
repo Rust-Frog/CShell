@@ -28,7 +28,7 @@ private:
 
     int m_bars;
     QVector<double> m_values;
-    QVector<double> m_workBuffer;  // Reusable buffer to avoid allocation in process()
+    QVector<double> m_workBuffer; // Reusable buffer to avoid allocation in process()
 
     void reload();
     void initCava();
