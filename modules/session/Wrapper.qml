@@ -53,7 +53,7 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         anchors.left: parent.left
 
-        Component.onCompleted: active = Qt.binding(() => (root.visibilities.session && Config.session.enabled) || root.implicitWidth > 0)
+        Component.onCompleted: active = Qt.binding(() => (root.visibilities.session && Config.session.enabled) || root.visible)
 
         sourceComponent: Content {
             visibilities: root.visibilities

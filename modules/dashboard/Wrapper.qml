@@ -80,7 +80,7 @@ Item {
         running: true
         interval: Appearance.anim.durations.extraLarge
         onTriggered: {
-            content.active = Qt.binding(() => (root.visibilities.dashboard && Config.dashboard.enabled) || root.implicitHeight > 0);
+            content.active = Qt.binding(() => (root.visibilities.dashboard && Config.dashboard.enabled) || root.visible);
             content.visible = true;
         }
     }

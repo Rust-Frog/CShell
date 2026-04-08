@@ -119,7 +119,7 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         anchors.left: parent.left
 
-        Component.onCompleted: active = Qt.binding(() => root.shouldBeActive || root.implicitWidth > 0)
+        Component.onCompleted: active = Qt.binding(() => root.shouldBeActive || root.visible)
 
         sourceComponent: Content {
             monitor: root.monitor
