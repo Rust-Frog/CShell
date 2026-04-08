@@ -22,6 +22,30 @@ Singleton {
 
     property var _prevActive: null
 
+    function getArtUrl(player: MprisPlayer): string {
+        if (!player)
+            return "";
+        if (player.trackArtUrl)
+            return player.trackArtUrl;
+
+        const url = player.metadata["xesam:url"] ?? "";
+        
+        // Match various YouTube URL formats
+        const patterns = [
+            /(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+            /youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/,
+            /youtube\.com\/v\/([a-zA-Z0-9_-]{11})/
+        ];
+
+        for (const pattern of patterns) {
+            const match = url.match(pattern);
+            if (match && match[1]) {
+                return `https://img.youtube.com/vi/${match[1]}/maxresdefault.jpg`;
+            }
+        }
+        return "";
+    }
+
     onActiveChanged: {
         if (_prevActive) {
             _prevActive.postTrackChanged.disconnect(_onPostTrackChanged);

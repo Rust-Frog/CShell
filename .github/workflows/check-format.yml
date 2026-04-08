@@ -7,9 +7,8 @@ on:
   pull_request:
 
 jobs:
-  check-format:
+  check-qml:
     runs-on: ubuntu-latest
-
     container:
       image: ghcr.io/rust-frog/shell-arch-env:latest
 
@@ -24,9 +23,16 @@ jobs:
           end
           python3 scripts/qml-lint-conventions.py
 
+  check-cpp:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/${{ github.repository_owner }}/shell-arch-env:latest
+
+    steps:
+      - uses: actions/checkout@v6
+
       - name: Check C++ format
         shell: fish {0}
         run: |
-          for file in (string match -v 'build/*' **.cpp **.hpp)
-            clang-format $file | diff -u $file - || exit 1
-          end
+          find plugin extras -name '*.cpp' -o -name '*.hpp' \
+            | xargs clang-format --dry-run --Werror

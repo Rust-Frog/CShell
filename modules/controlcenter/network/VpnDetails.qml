@@ -72,6 +72,13 @@ DeviceDetails {
                                         newProvider.enabled = (i === index) ? false : (p.enabled !== false);
                                     }
 
+                                    if (p.connectCmd && p.connectCmd.length > 0) {
+                                        newProvider.connectCmd = p.connectCmd;
+                                    }
+                                    if (p.disconnectCmd && p.disconnectCmd.length > 0) {
+                                        newProvider.disconnectCmd = p.disconnectCmd;
+                                    }
+
                                     providers.push(newProvider);
                                 } else {
                                     providers.push(p);
@@ -109,10 +116,13 @@ DeviceDetails {
                             inactiveOnColour: Colours.palette.m3onSecondaryContainer
 
                             onClicked: {
+                                const provider = Config.utilities.vpn.provider[root.vpnProvider.index];
                                 editVpnDialog.editIndex = root.vpnProvider.index;
                                 editVpnDialog.providerName = root.vpnProvider.name;
                                 editVpnDialog.displayName = root.vpnProvider.displayName;
                                 editVpnDialog.interfaceName = root.vpnProvider.interface;
+                                editVpnDialog.connectCmd = (provider && provider.connectCmd) ? provider.connectCmd.join(" ") : "";
+                                editVpnDialog.disconnectCmd = (provider && provider.disconnectCmd) ? provider.disconnectCmd.join(" ") : "";
                                 editVpnDialog.open();
                             }
                         }
@@ -135,6 +145,30 @@ DeviceDetails {
                                 root.session.vpn.active = null;
                             }
                         }
+                    }
+
+                    TextButton {
+                        Layout.fillWidth: true
+                        Layout.topMargin: Appearance.spacing.normal
+                        visible: root.providerEnabled && VPN.status.state === "needs-auth" && VPN.status.authUrl !== ""
+                        text: qsTr("Open Login Page")
+                        inactiveColour: Colours.palette.m3tertiaryContainer
+                        inactiveOnColour: Colours.palette.m3onTertiaryContainer
+
+                        onClicked: {
+                            Qt.openUrlExternally(VPN.status.authUrl);
+                        }
+                    }
+
+                    StyledText {
+                        Layout.fillWidth: true
+                        Layout.topMargin: Appearance.spacing.normal
+                        visible: root.providerEnabled && VPN.status.state === "needs-auth" && VPN.status.authUrl === ""
+                        text: qsTr("Click 'Connect' to generate authentication URL")
+                        font.pointSize: Appearance.font.size.small
+                        color: Colours.palette.m3onSurfaceVariant
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: Text.WordWrap
                     }
                 }
             }
@@ -176,10 +210,29 @@ DeviceDetails {
                                 return qsTr("Disabled");
                             if (VPN.connecting)
                                 return qsTr("Connecting...");
-                            if (VPN.connected)
+
+                            switch (VPN.status.state) {
+                            case "connected":
                                 return qsTr("Connected");
-                            return qsTr("Enabled (Not connected)");
+                            case "disconnected":
+                                return qsTr("Disconnected");
+                            case "connecting":
+                                return qsTr("Connecting...");
+                            case "needs-auth":
+                                return qsTr("Authentication required");
+                            case "error":
+                                return qsTr("Error");
+                            default:
+                                return qsTr("Unknown");
+                            }
                         }
+                    }
+
+                    PropertyRow {
+                        visible: VPN.status.reason !== ""
+                        showTopMargin: true
+                        label: qsTr("Details")
+                        value: VPN.status.reason
                     }
 
                     PropertyRow {
@@ -200,6 +253,8 @@ DeviceDetails {
         property string providerName: ""
         property string displayName: ""
         property string interfaceName: ""
+        property string connectCmd: ""
+        property string disconnectCmd: ""
 
         function closeWithAnimation(): void {
             close();
@@ -349,6 +404,82 @@ DeviceDetails {
                 }
             }
 
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: Appearance.spacing.smaller / 2
+                visible: editVpnDialog.connectCmd.length > 0
+
+                StyledText {
+                    text: qsTr("Connect Command")
+                    font.pointSize: Appearance.font.size.small
+                    color: Colours.palette.m3onSurfaceVariant
+                }
+
+                StyledRect {
+                    Layout.fillWidth: true
+                    implicitHeight: 40
+                    color: connectCmdFieldEdit.activeFocus ? Colours.layer(Colours.palette.m3surfaceContainer, 3) : Colours.layer(Colours.palette.m3surfaceContainer, 2)
+                    radius: Appearance.rounding.small
+                    border.width: 1
+                    border.color: connectCmdFieldEdit.activeFocus ? Colours.palette.m3primary : Qt.alpha(Colours.palette.m3outline, 0.3)
+
+                    Behavior on color {
+                        CAnim {}
+                    }
+                    Behavior on border.color {
+                        CAnim {}
+                    }
+
+                    StyledTextField {
+                        id: connectCmdFieldEdit
+
+                        anchors.centerIn: parent
+                        width: parent.width - Appearance.padding.normal
+                        horizontalAlignment: TextInput.AlignLeft
+                        text: editVpnDialog.connectCmd
+                        onTextChanged: editVpnDialog.connectCmd = text
+                    }
+                }
+            }
+
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: Appearance.spacing.smaller / 2
+                visible: editVpnDialog.disconnectCmd.length > 0
+
+                StyledText {
+                    text: qsTr("Disconnect Command")
+                    font.pointSize: Appearance.font.size.small
+                    color: Colours.palette.m3onSurfaceVariant
+                }
+
+                StyledRect {
+                    Layout.fillWidth: true
+                    implicitHeight: 40
+                    color: disconnectCmdFieldEdit.activeFocus ? Colours.layer(Colours.palette.m3surfaceContainer, 3) : Colours.layer(Colours.palette.m3surfaceContainer, 2)
+                    radius: Appearance.rounding.small
+                    border.width: 1
+                    border.color: disconnectCmdFieldEdit.activeFocus ? Colours.palette.m3primary : Qt.alpha(Colours.palette.m3outline, 0.3)
+
+                    Behavior on color {
+                        CAnim {}
+                    }
+                    Behavior on border.color {
+                        CAnim {}
+                    }
+
+                    StyledTextField {
+                        id: disconnectCmdFieldEdit
+
+                        anchors.centerIn: parent
+                        width: parent.width - Appearance.padding.normal
+                        horizontalAlignment: TextInput.AlignLeft
+                        text: editVpnDialog.disconnectCmd
+                        onTextChanged: editVpnDialog.disconnectCmd = text
+                    }
+                }
+            }
+
             RowLayout {
                 Layout.topMargin: Appearance.spacing.normal
                 Layout.fillWidth: true
@@ -376,14 +507,35 @@ DeviceDetails {
 
                         for (let i = 0; i < Config.utilities.vpn.provider.length; i++) {
                             if (i === editVpnDialog.editIndex) {
-                                providers.push({
-                                    name: editVpnDialog.providerName,
+                                const hasCommands = editVpnDialog.connectCmd.length > 0 && editVpnDialog.disconnectCmd.length > 0;
+                                const newProvider = {
                                     displayName: editVpnDialog.displayName || editVpnDialog.interfaceName,
+                                    enabled: wasEnabled,
                                     interface: editVpnDialog.interfaceName,
-                                    enabled: wasEnabled
-                                });
+                                    name: editVpnDialog.providerName
+                                };
+
+                                if (hasCommands) {
+                                    newProvider.connectCmd = editVpnDialog.connectCmd.split(" ").filter(s => s.length > 0);
+                                    newProvider.disconnectCmd = editVpnDialog.disconnectCmd.split(" ").filter(s => s.length > 0);
+                                }
+
+                                providers.push(newProvider);
                             } else {
-                                providers.push(Config.utilities.vpn.provider[i]);
+                                const p = Config.utilities.vpn.provider[i];
+                                const reconstructed = {
+                                    displayName: p.displayName,
+                                    enabled: p.enabled,
+                                    interface: p.interface,
+                                    name: p.name
+                                };
+                                if (p.connectCmd && p.connectCmd.length > 0) {
+                                    reconstructed.connectCmd = p.connectCmd;
+                                }
+                                if (p.disconnectCmd && p.disconnectCmd.length > 0) {
+                                    reconstructed.disconnectCmd = p.disconnectCmd;
+                                }
+                                providers.push(reconstructed);
                             }
                         }
 
